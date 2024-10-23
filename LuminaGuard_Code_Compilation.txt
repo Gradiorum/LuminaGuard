@@ -78,6 +78,10 @@ File: LuminaGuard\LuminaGuard.csproj
     <PackageReference Include="System.Management" Version="7.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Resources/app.ico" />
+  </ItemGroup>
+
 </Project>
 
 
@@ -132,7 +136,7 @@ File: LuminaGuard\MainWindow.xaml
         </StackPanel>
 
         <!-- System Tray Icon -->
-        <tb:TaskbarIcon x:Name="NotifyIcon" IconSource="Resources/app.ico" Visibility="Collapsed">
+        <tb:TaskbarIcon x:Name="NotifyIcon" IconSource="pack://application:,,,/Resources/app.ico" Visibility="Collapsed">
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Toggle Filter" Click="ToggleFilter_Click" />
@@ -169,7 +173,8 @@ namespace LuminaGuard
     public partial class MainWindow : Window
     {
         private OverlayWindow overlayWindow;
-        private DispatcherTimer schedulerTimer;
+        private DispatcherTimer? schedulerTimer;
+
         private Scheduler scheduler;
         private BrightnessController brightnessController;
         private FilterManager filterManager;
@@ -692,16 +697,17 @@ using System;
 namespace LuminaGuard.Helpers
 {
     public class ScheduleEntry
-    {
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-        public string IntensityCurve { get; set; }
+{
+    public TimeSpan StartTime { get; set; }
+    public TimeSpan EndTime { get; set; }
+    public string IntensityCurve { get; set; } = "Linear";
 
-        public override string ToString()
-        {
-            return $"{StartTime:hh\\:mm} - {EndTime:hh\\:mm} ({IntensityCurve})";
-        }
+    public override string ToString()
+    {
+        return $"{StartTime:hh\\:mm} - {EndTime:hh\\:mm} ({IntensityCurve})";
     }
+}
+
 }
 
 

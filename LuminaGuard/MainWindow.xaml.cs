@@ -17,12 +17,12 @@ namespace LuminaGuard
     public partial class MainWindow : Window
     {
         private OverlayWindow overlayWindow;
-        private DispatcherTimer? schedulerTimer;
-
+        private DispatcherTimer schedulerTimer;
         private Scheduler scheduler;
         private BrightnessController brightnessController;
         private FilterManager filterManager;
         private ObservableCollection<ScheduleEntry> schedules;
+        private bool isHotkeyRegistered = false;
 
         public MainWindow()
         {
@@ -61,8 +61,15 @@ namespace LuminaGuard
             ApplyOverlaySettings();
         }
 
+        private void BrightnessSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            byte brightness = (byte)BrightnessSlider.Value;
+            brightnessController.SetBrightness(brightness);
+        }
+
         private void TemperatureSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            HexCodeTextBox.Text = ""; // Clear hex code to use temperature
             ApplyOverlaySettings();
         }
 
@@ -96,6 +103,7 @@ namespace LuminaGuard
             if (overlayWindow == null) return;
 
             Color color;
+
             if (IsValidHex(HexCodeTextBox.Text))
             {
                 try
@@ -111,13 +119,21 @@ namespace LuminaGuard
             }
             else
             {
-                // Fallback to color temperature
+                // Use color temperature
                 double kelvin = TemperatureSlider.Value;
                 color = ColorTemperatureConverter.ColorTemperatureToRGB(kelvin);
             }
 
             double intensity = IntensitySlider.Value / 100.0;
-            color = Color.FromArgb((byte)(intensity * 255), color.R, color.G, color.B);
+            byte alpha = (byte)(intensity * 255);
+
+            // Prevent full opacity
+            if (alpha >= 230) // Approx 90% opacity
+            {
+                alpha = 230;
+            }
+
+            color = Color.FromArgb(alpha, color.R, color.G, color.B);
 
             // Apply custom filters
             color = filterManager.ApplyFilters(color);
@@ -147,12 +163,12 @@ namespace LuminaGuard
 
             double progress = scheduler.CalculateProgress(now.TimeOfDay);
 
-            double scheduledIntensity = progress * 100;
+            double scheduledIntensity = progress * IntensitySlider.Maximum;
             IntensitySlider.Value = scheduledIntensity;
 
             if (EnableBrightnessAdjustmentCheckBox.IsChecked == true)
             {
-                byte brightness = (byte)(100 - scheduledIntensity); // Decrease brightness over time
+                byte brightness = (byte)(BrightnessSlider.Maximum - scheduledIntensity); // Decrease brightness over time
                 brightnessController.SetBrightness(brightness);
             }
         }
@@ -169,9 +185,13 @@ namespace LuminaGuard
 
         private void RegisterHotkeys()
         {
+            if (isHotkeyRegistered)
+                return;
+
             try
             {
                 HotkeyManager.Current.AddOrReplace("ToggleFilter", System.Windows.Input.Key.F12, System.Windows.Input.ModifierKeys.None, OnToggleFilterHotkey);
+                isHotkeyRegistered = true;
             }
             catch (Exception ex)
             {
@@ -209,9 +229,8 @@ namespace LuminaGuard
         private void OpenSettings_Click(object sender, RoutedEventArgs e)
         {
             this.Show();
-            this.WindowState = System.Windows.WindowState.Normal;
+            this.WindowState = WindowState.Normal;
         }
-
 
         private void ToggleFilter_Click(object sender, RoutedEventArgs e)
         {

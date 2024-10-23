@@ -19,25 +19,8 @@ namespace LuminaGuard
 
         private void OverlayWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            MakeWindowTransparent();
+            // Adjust to all screens
             AdjustToAllScreens();
-        }
-
-        public void MakeWindowTransparent()
-        {
-            var hwnd = new WindowInteropHelper(this).Handle;
-            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
-        }
-
-        private void AdjustToAllScreens()
-        {
-            foreach (var screen in Screen.AllScreens)
-            {
-                var overlay = new OverlayWindowInstance(this, screen);
-                overlay.Show();
-            }
-            this.Hide(); // Hide the initial overlay
         }
 
         public void SetOverlayColor(Color color)
@@ -51,22 +34,22 @@ namespace LuminaGuard
             }
         }
 
-        private const int GWL_EXSTYLE = -20;
-        private const int WS_EX_TRANSPARENT = 0x00000020;
-        private const int WS_EX_LAYERED = 0x00080000;
-
-        [DllImport("user32.dll")]
-        private static extern int GetWindowLong(IntPtr hwnd, int index);
-
-        [DllImport("user32.dll")]
-        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
+        private void AdjustToAllScreens()
+        {
+            foreach (var screen in Screen.AllScreens)
+            {
+                var overlay = new OverlayWindowInstance(screen);
+                overlay.Show();
+            }
+            this.Hide(); // Hide the initial overlay
+        }
     }
 
     public class OverlayWindowInstance : Window
     {
         public Grid OverlayGrid { get; set; }
 
-        public OverlayWindowInstance(OverlayWindow parent, Screen screen)
+        public OverlayWindowInstance(Screen screen)
         {
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
@@ -83,7 +66,19 @@ namespace LuminaGuard
             OverlayGrid = new Grid { Background = Brushes.Transparent };
             Content = OverlayGrid;
 
-            Loaded += (s, e) => parent.MakeWindowTransparent();
+            Loaded += OverlayWindowInstance_Loaded;
+        }
+
+        private void OverlayWindowInstance_Loaded(object sender, RoutedEventArgs e)
+        {
+            MakeWindowTransparent();
+        }
+
+        private void MakeWindowTransparent()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
         }
 
         private double GetDpiFactor()
@@ -91,5 +86,15 @@ namespace LuminaGuard
             var source = PresentationSource.FromVisual(this);
             return source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
         }
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TRANSPARENT = 0x00000020;
+        private const int WS_EX_LAYERED = 0x00080000;
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hwnd, int index);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
     }
 }

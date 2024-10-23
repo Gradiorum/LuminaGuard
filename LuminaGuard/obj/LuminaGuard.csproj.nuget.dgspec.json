@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj": {}
+    "D:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj": {}
   },
   "projects": {
-    "d:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj": {
+    "D:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj",
+        "projectUniqueName": "D:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj",
         "projectName": "LuminaGuard",
-        "projectPath": "d:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj",
+        "projectPath": "D:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj",
         "packagesPath": "C:\\Users\\WillR\\.nuget\\packages\\",
-        "outputPath": "d:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\obj\\",
+        "outputPath": "D:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
