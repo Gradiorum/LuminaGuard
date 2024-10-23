@@ -17,7 +17,7 @@ namespace LuminaGuard
     public partial class MainWindow : Window
     {
         private OverlayWindow overlayWindow;
-        private DispatcherTimer schedulerTimer;
+        private DispatcherTimer schedulerTimer = new DispatcherTimer();
         private Scheduler scheduler;
         private BrightnessController brightnessController;
         private FilterManager filterManager;
@@ -229,8 +229,9 @@ namespace LuminaGuard
         private void OpenSettings_Click(object sender, RoutedEventArgs e)
         {
             this.Show();
-            this.WindowState = WindowState.Normal;
+            this.WindowState = System.Windows.WindowState.Normal;
         }
+
 
         private void ToggleFilter_Click(object sender, RoutedEventArgs e)
         {

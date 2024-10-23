@@ -26,14 +26,35 @@ namespace LuminaGuard
 {
     public partial class App : Application
     {
+        private static readonly string AppMutexName = "LuminaGuardAppMutex";
+        private System.Threading.Mutex? appMutex;
+
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Ensure only one instance runs
+            bool createdNew;
+            appMutex = new System.Threading.Mutex(true, AppMutexName, out createdNew);
+
+            if (!createdNew)
+            {
+                // Another instance is already running
+                MessageBox.Show("LuminaGuard is already running.", "LuminaGuard", MessageBoxButton.OK, MessageBoxImage.Information);
+                Shutdown();
+                return;
+            }
+
             base.OnStartup(e);
             MainWindow mainWindow = new MainWindow();
             mainWindow.Show();
 
             // Prompt the user to disable Windows Night Light
             MessageBox.Show("For optimal performance, please disable Windows Night Light.", "LuminaGuard", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            appMutex?.ReleaseMutex();
+            base.OnExit(e);
         }
     }
 }
@@ -99,21 +120,28 @@ File: LuminaGuard\MainWindow.xaml
         Title="LuminaGuard" Height="600" Width="400">
     <Grid Margin="10">
         <StackPanel>
+            <!-- Branding -->
+            <TextBlock Text="LuminaGuard by Gradiorum" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10" />
+
             <!-- Enable Filter Toggle -->
             <CheckBox Name="EnableFilterCheckBox" Content="Enable Filter" Click="EnableFilterCheckBox_Click" />
 
             <!-- Intensity Slider -->
-            <TextBlock Text="Intensity" Margin="0,10,0,0" />
-            <Slider Name="IntensitySlider" Minimum="0" Maximum="100" Value="100" ValueChanged="IntensitySlider_ValueChanged" />
+            <TextBlock Text="Intensity (%)" Margin="0,10,0,0" />
+            <Slider Name="IntensitySlider" Minimum="0" Maximum="90" Value="50" ValueChanged="IntensitySlider_ValueChanged" />
+
+            <!-- Brightness Slider -->
+            <TextBlock Text="Brightness (%)" Margin="0,10,0,0" />
+            <Slider Name="BrightnessSlider" Minimum="10" Maximum="100" Value="100" ValueChanged="BrightnessSlider_ValueChanged" />
 
             <!-- Color Temperature Slider -->
             <TextBlock Text="Color Temperature (K)" Margin="0,10,0,0" />
-            <Slider Name="TemperatureSlider" Minimum="800" Maximum="6500" Value="1200" TickFrequency="100" IsSnapToTickEnabled="True" ValueChanged="TemperatureSlider_ValueChanged" />
+            <Slider Name="TemperatureSlider" Minimum="1000" Maximum="6500" Value="1200" TickFrequency="100" IsSnapToTickEnabled="True" ValueChanged="TemperatureSlider_ValueChanged" />
 
             <!-- Custom Color Input -->
             <TextBlock Text="Custom Color (Hex)" Margin="0,10,0,0" />
             <StackPanel Orientation="Horizontal">
-                <TextBox Name="HexCodeTextBox" Text="#FF0000" Width="100" TextChanged="HexCodeTextBox_TextChanged" />
+                <TextBox Name="HexCodeTextBox" Width="100" TextChanged="HexCodeTextBox_TextChanged" />
                 <Button Name="ColorPickerButton" Content="Select Color" Click="ColorPickerButton_Click" Margin="10,0,0,0" />
             </StackPanel>
 
@@ -173,12 +201,12 @@ namespace LuminaGuard
     public partial class MainWindow : Window
     {
         private OverlayWindow overlayWindow;
-        private DispatcherTimer? schedulerTimer;
-
+        private DispatcherTimer schedulerTimer = new DispatcherTimer();
         private Scheduler scheduler;
         private BrightnessController brightnessController;
         private FilterManager filterManager;
         private ObservableCollection<ScheduleEntry> schedules;
+        private bool isHotkeyRegistered = false;
 
         public MainWindow()
         {
@@ -217,8 +245,15 @@ namespace LuminaGuard
             ApplyOverlaySettings();
         }
 
+        private void BrightnessSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            byte brightness = (byte)BrightnessSlider.Value;
+            brightnessController.SetBrightness(brightness);
+        }
+
         private void TemperatureSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            HexCodeTextBox.Text = ""; // Clear hex code to use temperature
             ApplyOverlaySettings();
         }
 
@@ -252,6 +287,7 @@ namespace LuminaGuard
             if (overlayWindow == null) return;
 
             Color color;
+
             if (IsValidHex(HexCodeTextBox.Text))
             {
                 try
@@ -267,13 +303,21 @@ namespace LuminaGuard
             }
             else
             {
-                // Fallback to color temperature
+                // Use color temperature
                 double kelvin = TemperatureSlider.Value;
                 color = ColorTemperatureConverter.ColorTemperatureToRGB(kelvin);
             }
 
             double intensity = IntensitySlider.Value / 100.0;
-            color = Color.FromArgb((byte)(intensity * 255), color.R, color.G, color.B);
+            byte alpha = (byte)(intensity * 255);
+
+            // Prevent full opacity
+            if (alpha >= 230) // Approx 90% opacity
+            {
+                alpha = 230;
+            }
+
+            color = Color.FromArgb(alpha, color.R, color.G, color.B);
 
             // Apply custom filters
             color = filterManager.ApplyFilters(color);
@@ -303,12 +347,12 @@ namespace LuminaGuard
 
             double progress = scheduler.CalculateProgress(now.TimeOfDay);
 
-            double scheduledIntensity = progress * 100;
+            double scheduledIntensity = progress * IntensitySlider.Maximum;
             IntensitySlider.Value = scheduledIntensity;
 
             if (EnableBrightnessAdjustmentCheckBox.IsChecked == true)
             {
-                byte brightness = (byte)(100 - scheduledIntensity); // Decrease brightness over time
+                byte brightness = (byte)(BrightnessSlider.Maximum - scheduledIntensity); // Decrease brightness over time
                 brightnessController.SetBrightness(brightness);
             }
         }
@@ -325,9 +369,13 @@ namespace LuminaGuard
 
         private void RegisterHotkeys()
         {
+            if (isHotkeyRegistered)
+                return;
+
             try
             {
                 HotkeyManager.Current.AddOrReplace("ToggleFilter", System.Windows.Input.Key.F12, System.Windows.Input.ModifierKeys.None, OnToggleFilterHotkey);
+                isHotkeyRegistered = true;
             }
             catch (Exception ex)
             {
@@ -365,9 +413,8 @@ namespace LuminaGuard
         private void OpenSettings_Click(object sender, RoutedEventArgs e)
         {
             this.Show();
-            this.WindowState = System.Windows.WindowState.Normal;
+            this.WindowState = WindowState.Normal;
         }
-
 
         private void ToggleFilter_Click(object sender, RoutedEventArgs e)
         {
@@ -448,25 +495,8 @@ namespace LuminaGuard
 
         private void OverlayWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            MakeWindowTransparent();
+            // Adjust to all screens
             AdjustToAllScreens();
-        }
-
-        public void MakeWindowTransparent()
-        {
-            var hwnd = new WindowInteropHelper(this).Handle;
-            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
-        }
-
-        private void AdjustToAllScreens()
-        {
-            foreach (var screen in Screen.AllScreens)
-            {
-                var overlay = new OverlayWindowInstance(this, screen);
-                overlay.Show();
-            }
-            this.Hide(); // Hide the initial overlay
         }
 
         public void SetOverlayColor(Color color)
@@ -480,22 +510,22 @@ namespace LuminaGuard
             }
         }
 
-        private const int GWL_EXSTYLE = -20;
-        private const int WS_EX_TRANSPARENT = 0x00000020;
-        private const int WS_EX_LAYERED = 0x00080000;
-
-        [DllImport("user32.dll")]
-        private static extern int GetWindowLong(IntPtr hwnd, int index);
-
-        [DllImport("user32.dll")]
-        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
+        private void AdjustToAllScreens()
+        {
+            foreach (var screen in Screen.AllScreens)
+            {
+                var overlay = new OverlayWindowInstance(screen);
+                overlay.Show();
+            }
+            this.Hide(); // Hide the initial overlay
+        }
     }
 
     public class OverlayWindowInstance : Window
     {
         public Grid OverlayGrid { get; set; }
 
-        public OverlayWindowInstance(OverlayWindow parent, Screen screen)
+        public OverlayWindowInstance(Screen screen)
         {
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
@@ -512,7 +542,19 @@ namespace LuminaGuard
             OverlayGrid = new Grid { Background = Brushes.Transparent };
             Content = OverlayGrid;
 
-            Loaded += (s, e) => parent.MakeWindowTransparent();
+            Loaded += OverlayWindowInstance_Loaded;
+        }
+
+        private void OverlayWindowInstance_Loaded(object sender, RoutedEventArgs e)
+        {
+            MakeWindowTransparent();
+        }
+
+        private void MakeWindowTransparent()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
         }
 
         private double GetDpiFactor()
@@ -520,6 +562,16 @@ namespace LuminaGuard
             var source = PresentationSource.FromVisual(this);
             return source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
         }
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TRANSPARENT = 0x00000020;
+        private const int WS_EX_LAYERED = 0x00080000;
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hwnd, int index);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
     }
 }
 
