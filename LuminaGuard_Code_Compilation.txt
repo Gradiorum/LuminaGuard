@@ -1,0 +1,783 @@
+
+================================================================================
+File: LuminaGuard\App.xaml
+================================================================================
+
+﻿<!-- App.xaml -->
+<Application x:Class="LuminaGuard.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+         
+    </Application.Resources>
+</Application>
+
+
+
+================================================================================
+File: LuminaGuard\App.xaml.cs
+================================================================================
+
+﻿// App.xaml.cs
+using System.Windows;
+
+namespace LuminaGuard
+{
+    public partial class App : Application
+    {
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+            MainWindow mainWindow = new MainWindow();
+            mainWindow.Show();
+
+            // Prompt the user to disable Windows Night Light
+            MessageBox.Show("For optimal performance, please disable Windows Night Light.", "LuminaGuard", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+}
+
+
+
+================================================================================
+File: LuminaGuard\AssemblyInfo.cs
+================================================================================
+
+using System.Windows;
+
+[assembly:ThemeInfo(
+    ResourceDictionaryLocation.None,            //where theme specific resource dictionaries are located
+                                                //(used if a resource is not found in the page,
+                                                // or application resource dictionaries)
+    ResourceDictionaryLocation.SourceAssembly   //where the generic resource dictionary is located
+                                                //(used if a resource is not found in the page,
+                                                // app, or any theme specific resource dictionaries)
+)]
+
+
+
+================================================================================
+File: LuminaGuard\LuminaGuard.csproj
+================================================================================
+
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.1" />
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
+    <PackageReference Include="NHotkey.Wpf" Version="3.0.0" />
+    <PackageReference Include="System.Management" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>
+
+
+
+================================================================================
+File: LuminaGuard\MainWindow.xaml
+================================================================================
+
+﻿<!-- MainWindow.xaml -->
+<Window x:Class="LuminaGuard.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:tb="http://www.hardcodet.net/taskbar"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        Title="LuminaGuard" Height="600" Width="400">
+    <Grid Margin="10">
+        <StackPanel>
+            <!-- Enable Filter Toggle -->
+            <CheckBox Name="EnableFilterCheckBox" Content="Enable Filter" Click="EnableFilterCheckBox_Click" />
+
+            <!-- Intensity Slider -->
+            <TextBlock Text="Intensity" Margin="0,10,0,0" />
+            <Slider Name="IntensitySlider" Minimum="0" Maximum="100" Value="100" ValueChanged="IntensitySlider_ValueChanged" />
+
+            <!-- Color Temperature Slider -->
+            <TextBlock Text="Color Temperature (K)" Margin="0,10,0,0" />
+            <Slider Name="TemperatureSlider" Minimum="800" Maximum="6500" Value="1200" TickFrequency="100" IsSnapToTickEnabled="True" ValueChanged="TemperatureSlider_ValueChanged" />
+
+            <!-- Custom Color Input -->
+            <TextBlock Text="Custom Color (Hex)" Margin="0,10,0,0" />
+            <StackPanel Orientation="Horizontal">
+                <TextBox Name="HexCodeTextBox" Text="#FF0000" Width="100" TextChanged="HexCodeTextBox_TextChanged" />
+                <Button Name="ColorPickerButton" Content="Select Color" Click="ColorPickerButton_Click" Margin="10,0,0,0" />
+            </StackPanel>
+
+            <!-- Advanced Settings Toggle -->
+            <Expander Header="Advanced Settings" Margin="0,10,0,0">
+                <StackPanel>
+                    <!-- Scheduler Section -->
+                    <CheckBox Name="EnableSchedulerCheckBox" Content="Enable Scheduler" />
+                    <Button Name="AddScheduleButton" Content="Add Schedule" Click="AddScheduleButton_Click" Margin="0,5,0,0" />
+                    <ListBox Name="ScheduleListBox" Height="100" />
+
+                    <!-- Brightness Adjustment -->
+                    <CheckBox Name="EnableBrightnessAdjustmentCheckBox" Content="Adjust Brightness Over Time" />
+
+                    <!-- Custom Filters -->
+                    <TextBlock Text="Custom Filters" Margin="0,10,0,0" />
+                    <Button Name="ManageFiltersButton" Content="Manage Filters" Click="ManageFiltersButton_Click" />
+                </StackPanel>
+            </Expander>
+        </StackPanel>
+
+        <!-- System Tray Icon -->
+        <tb:TaskbarIcon x:Name="NotifyIcon" IconSource="Resources/app.ico" Visibility="Collapsed">
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Toggle Filter" Click="ToggleFilter_Click" />
+                    <MenuItem Header="Open Settings" Click="OpenSettings_Click" />
+                    <MenuItem Header="Exit" Click="Exit_Click" />
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+        </tb:TaskbarIcon>
+    </Grid>
+</Window>
+
+
+
+================================================================================
+File: LuminaGuard\MainWindow.xaml.cs
+================================================================================
+
+﻿// MainWindow.xaml.cs
+using System;
+using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Threading;
+using Hardcodet.Wpf.TaskbarNotification;
+using NHotkey;
+using NHotkey.Wpf;
+using Xceed.Wpf.Toolkit;
+using LuminaGuard.Helpers;
+using System.Windows.Controls;
+using System.Windows.Forms; // For ColorDialog
+
+namespace LuminaGuard
+{
+    public partial class MainWindow : Window
+    {
+        private OverlayWindow overlayWindow;
+        private DispatcherTimer schedulerTimer;
+        private Scheduler scheduler;
+        private BrightnessController brightnessController;
+        private FilterManager filterManager;
+        private ObservableCollection<ScheduleEntry> schedules;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            overlayWindow = new OverlayWindow();
+            scheduler = new Scheduler();
+            brightnessController = new BrightnessController();
+            filterManager = new FilterManager();
+            schedules = new ObservableCollection<ScheduleEntry>();
+            ScheduleListBox.ItemsSource = schedules;
+
+            InitializeScheduler();
+            RegisterHotkeys();
+
+            // Event handlers
+            this.Closing += MainWindow_Closing;
+            EnableSchedulerCheckBox.Checked += EnableSchedulerCheckBox_Checked;
+            EnableSchedulerCheckBox.Unchecked += EnableSchedulerCheckBox_Unchecked;
+        }
+
+        private void EnableFilterCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            if (EnableFilterCheckBox.IsChecked == true)
+            {
+                ApplyOverlaySettings();
+                overlayWindow.Show();
+            }
+            else
+            {
+                overlayWindow.Hide();
+            }
+        }
+
+        private void IntensitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            ApplyOverlaySettings();
+        }
+
+        private void TemperatureSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            ApplyOverlaySettings();
+        }
+
+        private void HexCodeTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApplyOverlaySettings();
+        }
+
+        private void ColorPickerButton_Click(object sender, RoutedEventArgs e)
+        {
+            var colorDialog = new System.Windows.Forms.ColorDialog();
+            if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                var color = colorDialog.Color;
+                HexCodeTextBox.Text = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+            }
+        }
+
+        private bool IsValidHex(string hex)
+        {
+            if (string.IsNullOrWhiteSpace(hex))
+                return false;
+            hex = hex.Trim();
+            if (hex.StartsWith("#"))
+                hex = hex.Substring(1);
+            return hex.Length == 6 || hex.Length == 8;
+        }
+
+        private void ApplyOverlaySettings()
+        {
+            if (overlayWindow == null) return;
+
+            Color color;
+            if (IsValidHex(HexCodeTextBox.Text))
+            {
+                try
+                {
+                    color = (Color)ColorConverter.ConvertFromString(HexCodeTextBox.Text);
+                }
+                catch
+                {
+                    // Handle invalid hex code
+                    System.Windows.MessageBox.Show("Invalid hex code entered.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+            else
+            {
+                // Fallback to color temperature
+                double kelvin = TemperatureSlider.Value;
+                color = ColorTemperatureConverter.ColorTemperatureToRGB(kelvin);
+            }
+
+            double intensity = IntensitySlider.Value / 100.0;
+            color = Color.FromArgb((byte)(intensity * 255), color.R, color.G, color.B);
+
+            // Apply custom filters
+            color = filterManager.ApplyFilters(color);
+
+            overlayWindow.SetOverlayColor(color);
+        }
+
+        private void InitializeScheduler()
+        {
+            schedulerTimer = new DispatcherTimer();
+            schedulerTimer.Interval = TimeSpan.FromMinutes(1);
+            schedulerTimer.Tick += SchedulerTimer_Tick;
+            schedulerTimer.Start();
+        }
+
+        private void SchedulerTimer_Tick(object? sender, EventArgs e)
+        {
+            if (EnableSchedulerCheckBox.IsChecked == true)
+            {
+                UpdateIntensityBasedOnSchedule();
+            }
+        }
+
+        private void UpdateIntensityBasedOnSchedule()
+        {
+            DateTime now = DateTime.Now;
+
+            double progress = scheduler.CalculateProgress(now.TimeOfDay);
+
+            double scheduledIntensity = progress * 100;
+            IntensitySlider.Value = scheduledIntensity;
+
+            if (EnableBrightnessAdjustmentCheckBox.IsChecked == true)
+            {
+                byte brightness = (byte)(100 - scheduledIntensity); // Decrease brightness over time
+                brightnessController.SetBrightness(brightness);
+            }
+        }
+
+        private void EnableSchedulerCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            schedulerTimer.Start();
+        }
+
+        private void EnableSchedulerCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            schedulerTimer.Stop();
+        }
+
+        private void RegisterHotkeys()
+        {
+            try
+            {
+                HotkeyManager.Current.AddOrReplace("ToggleFilter", System.Windows.Input.Key.F12, System.Windows.Input.ModifierKeys.None, OnToggleFilterHotkey);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show("Failed to register hotkey: " + ex.Message);
+            }
+        }
+
+        private void OnToggleFilterHotkey(object? sender, HotkeyEventArgs e)
+        {
+            if (overlayWindow.IsVisible)
+                overlayWindow.Hide();
+            else
+            {
+                ApplyOverlaySettings();
+                overlayWindow.Show();
+            }
+
+            e.Handled = true;
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // Hide the window instead of closing
+            e.Cancel = true;
+            this.Hide();
+            NotifyIcon.Visibility = Visibility.Visible;
+        }
+
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            NotifyIcon.Dispose();
+            System.Windows.Application.Current.Shutdown();
+        }
+
+        private void OpenSettings_Click(object sender, RoutedEventArgs e)
+        {
+            this.Show();
+            this.WindowState = System.Windows.WindowState.Normal;
+        }
+
+
+        private void ToggleFilter_Click(object sender, RoutedEventArgs e)
+        {
+            if (overlayWindow.IsVisible)
+                overlayWindow.Hide();
+            else
+            {
+                ApplyOverlaySettings();
+                overlayWindow.Show();
+            }
+        }
+
+        private void ManageFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Open filter management window (implementation not shown)
+            System.Windows.MessageBox.Show("Filter management feature is not yet implemented.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void AddScheduleButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Open a dialog to add a new schedule (simplified for brevity)
+            var newSchedule = new ScheduleEntry
+            {
+                StartTime = TimeSpan.FromHours(22),
+                EndTime = TimeSpan.FromHours(6),
+                IntensityCurve = "Exponential"
+            };
+            schedules.Add(newSchedule);
+            scheduler.ScheduleEntries = schedules;
+        }
+    }
+}
+
+
+
+================================================================================
+File: LuminaGuard\OverlayWindow.xaml
+================================================================================
+
+<!-- OverlayWindow.xaml -->
+<Window x:Class="LuminaGuard.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        WindowState="Maximized">
+    <Grid Name="OverlayGrid" Background="Transparent" />
+</Window>
+
+
+
+================================================================================
+File: LuminaGuard\OverlayWindow.xaml.cs
+================================================================================
+
+// OverlayWindow.xaml.cs
+using System;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Controls; // For Grid
+using System.Windows.Forms;   // For Screen
+
+namespace LuminaGuard
+{
+    public partial class OverlayWindow : Window
+    {
+        public OverlayWindow()
+        {
+            InitializeComponent();
+            Loaded += OverlayWindow_Loaded;
+        }
+
+        private void OverlayWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            MakeWindowTransparent();
+            AdjustToAllScreens();
+        }
+
+        public void MakeWindowTransparent()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED);
+        }
+
+        private void AdjustToAllScreens()
+        {
+            foreach (var screen in Screen.AllScreens)
+            {
+                var overlay = new OverlayWindowInstance(this, screen);
+                overlay.Show();
+            }
+            this.Hide(); // Hide the initial overlay
+        }
+
+        public void SetOverlayColor(Color color)
+        {
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is OverlayWindowInstance overlay)
+                {
+                    overlay.OverlayGrid.Background = new SolidColorBrush(color);
+                }
+            }
+        }
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TRANSPARENT = 0x00000020;
+        private const int WS_EX_LAYERED = 0x00080000;
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hwnd, int index);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
+    }
+
+    public class OverlayWindowInstance : Window
+    {
+        public Grid OverlayGrid { get; set; }
+
+        public OverlayWindowInstance(OverlayWindow parent, Screen screen)
+        {
+            WindowStyle = WindowStyle.None;
+            AllowsTransparency = true;
+            Background = Brushes.Transparent;
+            Topmost = true;
+            ShowInTaskbar = false;
+            ResizeMode = ResizeMode.NoResize;
+
+            Left = screen.Bounds.Left / GetDpiFactor();
+            Top = screen.Bounds.Top / GetDpiFactor();
+            Width = screen.Bounds.Width / GetDpiFactor();
+            Height = screen.Bounds.Height / GetDpiFactor();
+
+            OverlayGrid = new Grid { Background = Brushes.Transparent };
+            Content = OverlayGrid;
+
+            Loaded += (s, e) => parent.MakeWindowTransparent();
+        }
+
+        private double GetDpiFactor()
+        {
+            var source = PresentationSource.FromVisual(this);
+            return source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+        }
+    }
+}
+
+
+
+================================================================================
+File: LuminaGuard\Helpers\BrightnessController.cs
+================================================================================
+
+// BrightnessController.cs
+using System;
+using System.Management;
+
+namespace LuminaGuard.Helpers
+{
+    public class BrightnessController
+    {
+        public void SetBrightness(byte targetBrightness)
+        {
+            try
+            {
+                ManagementScope scope = new ManagementScope("root\\WMI");
+                SelectQuery query = new SelectQuery("WmiMonitorBrightnessMethods");
+                using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query))
+                {
+                    ManagementObjectCollection objectCollection = searcher.Get();
+                    foreach (ManagementObject mObj in objectCollection)
+                    {
+                        mObj.InvokeMethod("WmiSetBrightness", new object[] { uint.MaxValue, targetBrightness });
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions appropriately
+                Console.WriteLine("Error setting brightness: " + ex.Message);
+            }
+        }
+    }
+}
+
+
+
+================================================================================
+File: LuminaGuard\Helpers\ColorTemperatureConverter.cs
+================================================================================
+
+// ColorTemperatureConverter.cs
+using System;
+using System.Windows.Media;
+
+namespace LuminaGuard.Helpers
+{
+    public static class ColorTemperatureConverter
+    {
+        public static Color ColorTemperatureToRGB(double kelvin)
+        {
+            kelvin = kelvin / 100;
+
+            double red, green, blue;
+
+            // Calculate red
+            if (kelvin <= 66)
+            {
+                red = 255;
+            }
+            else
+            {
+                red = kelvin - 60;
+                red = 329.698727446 * Math.Pow(red, -0.1332047592);
+                red = Math.Clamp(red, 0, 255);
+            }
+
+            // Calculate green
+            if (kelvin <= 66)
+            {
+                green = kelvin;
+                green = 99.4708025861 * Math.Log(green) - 161.1195681661;
+            }
+            else
+            {
+                green = kelvin - 60;
+                green = 288.1221695283 * Math.Pow(green, -0.0755148492);
+            }
+            green = Math.Clamp(green, 0, 255);
+
+            // Calculate blue
+            if (kelvin >= 66)
+            {
+                blue = 255;
+            }
+            else if (kelvin <= 19)
+            {
+                blue = 0;
+            }
+            else
+            {
+                blue = kelvin - 10;
+                blue = 138.5177312231 * Math.Log(blue) - 305.0447927307;
+                blue = Math.Clamp(blue, 0, 255);
+            }
+
+            return Color.FromRgb((byte)red, (byte)green, (byte)blue);
+        }
+    }
+}
+
+
+
+================================================================================
+File: LuminaGuard\Helpers\FilterManager.cs
+================================================================================
+
+// FilterManager.cs
+using System;
+using System.Collections.Generic;
+using System.Windows.Media;
+
+namespace LuminaGuard.Helpers
+{
+    public class FilterManager
+    {
+        private List<Func<Color, Color>> filters;
+
+        public FilterManager()
+        {
+            filters = new List<Func<Color, Color>>();
+            // Initialize with default filters if any
+        }
+
+        public void AddFilter(Func<Color, Color> filter)
+        {
+            filters.Add(filter);
+        }
+
+        public void RemoveFilter(Func<Color, Color> filter)
+        {
+            filters.Remove(filter);
+        }
+
+        public Color ApplyFilters(Color color)
+        {
+            foreach (var filter in filters)
+            {
+                color = filter(color);
+            }
+            return color;
+        }
+
+        // Example filter: Grayscale
+        public void InitializeDefaultFilters()
+        {
+            AddFilter(GrayscaleFilter);
+            // Add other default filters here
+        }
+
+        public static Color GrayscaleFilter(Color color)
+        {
+            byte gray = (byte)((color.R + color.G + color.B) / 3);
+            return Color.FromArgb(color.A, gray, gray, gray);
+        }
+    }
+}
+
+
+
+================================================================================
+File: LuminaGuard\Helpers\ScheduleEntry.cs
+================================================================================
+
+// ScheduleEntry.cs
+using System;
+
+namespace LuminaGuard.Helpers
+{
+    public class ScheduleEntry
+    {
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public string IntensityCurve { get; set; }
+
+        public override string ToString()
+        {
+            return $"{StartTime:hh\\:mm} - {EndTime:hh\\:mm} ({IntensityCurve})";
+        }
+    }
+}
+
+
+
+================================================================================
+File: LuminaGuard\Helpers\Scheduler.cs
+================================================================================
+
+// Scheduler.cs
+using System;
+using System.Collections.Generic;
+
+namespace LuminaGuard.Helpers
+{
+    public class Scheduler
+    {
+        public IList<ScheduleEntry> ScheduleEntries { get; set; }
+        public double RateOfChange { get; set; } = 1.0;
+
+        public Scheduler()
+        {
+            ScheduleEntries = new List<ScheduleEntry>();
+        }
+
+        public double CalculateProgress(TimeSpan now)
+        {
+            foreach (var entry in ScheduleEntries)
+            {
+                TimeSpan start = entry.StartTime;
+                TimeSpan end = entry.EndTime;
+
+                // Adjust for schedules that cross midnight
+                if (end <= start)
+                {
+                    if (now >= start || now <= end)
+                    {
+                        return CalculateProgressForEntry(now, start, end, entry.IntensityCurve) * RateOfChange;
+                    }
+                }
+                else
+                {
+                    if (now >= start && now <= end)
+                    {
+                        return CalculateProgressForEntry(now, start, end, entry.IntensityCurve) * RateOfChange;
+                    }
+                }
+            }
+
+            return 0; // Default intensity if no schedule matches
+        }
+
+        private double CalculateProgressForEntry(TimeSpan now, TimeSpan start, TimeSpan end, string curveType)
+        {
+            double totalMinutes = (end - start).TotalMinutes;
+            double elapsedMinutes = (now - start).TotalMinutes;
+
+            if (totalMinutes <= 0)
+                return 1;
+
+            double progress = elapsedMinutes / totalMinutes;
+            progress = Math.Max(0, Math.Min(1, progress));
+
+            switch (curveType)
+            {
+                case "Exponential":
+                    progress = Math.Pow(progress, 2);
+                    break;
+                case "Linear":
+                default:
+                    // Linear progression
+                    break;
+            }
+
+            return progress;
+        }
+    }
+}
+
+

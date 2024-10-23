@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "zl08g2VN24U=",
+  "success": true,
+  "projectFilePath": "d:\\Users\\WillR\\Documents\\GitHub\\LuminaGuard\\LuminaGuard\\LuminaGuard.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\WillR\\.nuget\\packages\\extended.wpf.toolkit\\4.6.1\\extended.wpf.toolkit.4.6.1.nupkg.sha512",
+    "C:\\Users\\WillR\\.nuget\\packages\\hardcodet.notifyicon.wpf\\2.0.1\\hardcodet.notifyicon.wpf.2.0.1.nupkg.sha512",
+    "C:\\Users\\WillR\\.nuget\\packages\\nhotkey\\3.0.0\\nhotkey.3.0.0.nupkg.sha512",
+    "C:\\Users\\WillR\\.nuget\\packages\\nhotkey.wpf\\3.0.0\\nhotkey.wpf.3.0.0.nupkg.sha512",
+    "C:\\Users\\WillR\\.nuget\\packages\\system.codedom\\7.0.0\\system.codedom.7.0.0.nupkg.sha512",
+    "C:\\Users\\WillR\\.nuget\\packages\\system.management\\7.0.0\\system.management.7.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
