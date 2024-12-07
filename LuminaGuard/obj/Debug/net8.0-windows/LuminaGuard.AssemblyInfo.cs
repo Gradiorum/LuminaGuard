@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LuminaGuard")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4830e635530246593688e212235466552b7538cb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b46b5b90018e4de5f59903854c1668e4efec1726")]
 [assembly: System.Reflection.AssemblyProductAttribute("LuminaGuard")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LuminaGuard")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

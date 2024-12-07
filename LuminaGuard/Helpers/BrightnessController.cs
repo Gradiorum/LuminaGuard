@@ -1,4 +1,3 @@
-// BrightnessController.cs
 using System;
 using System.Management;
 
@@ -24,8 +23,7 @@ namespace LuminaGuard.Helpers
             }
             catch (Exception ex)
             {
-                // Handle exceptions appropriately
-                Console.WriteLine("Error setting brightness: " + ex.Message);
+                Logging.Log("Error setting brightness: " + ex.Message);
             }
         }
     }

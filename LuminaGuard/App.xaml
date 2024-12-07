@@ -1,9 +1,9 @@
-﻿<!-- App.xaml -->
-<Application x:Class="LuminaGuard.App"
+﻿<Application x:Class="LuminaGuard.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             StartupUri="Views/OnboardingWizard.xaml">
     <Application.Resources>
-         
+        <!-- Global styles, theming, and resource dictionaries can go here -->
+        <!-- Future: Include resource dictionaries for light/dark themes, high contrast, etc. -->
     </Application.Resources>
 </Application>

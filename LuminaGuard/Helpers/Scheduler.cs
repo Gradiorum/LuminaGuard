@@ -1,4 +1,3 @@
-// Scheduler.cs
 using System;
 using System.Collections.Generic;
 
@@ -21,9 +20,9 @@ namespace LuminaGuard.Helpers
                 TimeSpan start = entry.StartTime;
                 TimeSpan end = entry.EndTime;
 
-                // Adjust for schedules that cross midnight
                 if (end <= start)
                 {
+                    // Wraps past midnight
                     if (now >= start || now <= end)
                     {
                         return CalculateProgressForEntry(now, start, end, entry.IntensityCurve) * RateOfChange;
@@ -38,13 +37,17 @@ namespace LuminaGuard.Helpers
                 }
             }
 
-            return 0; // Default intensity if no schedule matches
+            return 0; 
         }
 
         private double CalculateProgressForEntry(TimeSpan now, TimeSpan start, TimeSpan end, string curveType)
         {
-            double totalMinutes = (end - start).TotalMinutes;
-            double elapsedMinutes = (now - start).TotalMinutes;
+            double totalMinutes = (end <= start)
+                ? (end + TimeSpan.FromDays(1) - start).TotalMinutes
+                : (end - start).TotalMinutes;
+            double elapsedMinutes = (end <= start && now < start)
+                ? (now + TimeSpan.FromDays(1) - start).TotalMinutes
+                : (now - start).TotalMinutes;
 
             if (totalMinutes <= 0)
                 return 1;
@@ -59,7 +62,6 @@ namespace LuminaGuard.Helpers
                     break;
                 case "Linear":
                 default:
-                    // Linear progression
                     break;
             }
 

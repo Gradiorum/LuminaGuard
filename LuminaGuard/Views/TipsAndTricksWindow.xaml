@@ -1,0 +1,21 @@
+<Window x:Class="LuminaGuard.Views.TipsAndTricksWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Tips and Tricks" Height="400" Width="400">
+    <Grid Margin="10">
+        <ScrollViewer>
+            <StackPanel>
+                <TextBlock Text="Tips and Tricks" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                <TextBlock Text="1. Reduce blue light at least 2 hours before bedtime to improve sleep." Margin="0,0,0,10"/>
+                <TextBlock Text="2. Adjust color temperature gradually for smoother transitions." Margin="0,0,0,10"/>
+                <TextBlock Text="3. Experiment with wind-down and wake-up modes to align with your circadian rhythm." Margin="0,0,0,10"/>
+                <TextBlock Text="4. Use ML adaptation to let the software learn your preferences over time." Margin="0,0,0,10"/>
+                <TextBlock Text="5. Explore different accessibility filters if you have specific vision needs." Margin="0,0,0,10"/>
+                <TextBlock Text="6. Create multiple profiles for different environments (e.g., work, gaming, reading)." Margin="0,0,0,10"/>
+                <TextBlock Text="7. Integrate with your smart home devices for a seamless lighting experience." Margin="0,0,0,10"/>
+                <TextBlock Text="8. Regularly sync to the cloud if you use multiple devices." Margin="0,0,0,10"/>
+                <TextBlock Text="9. Future: Install plugin-based filters or integration modules from marketplace." Margin="0,0,0,10"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

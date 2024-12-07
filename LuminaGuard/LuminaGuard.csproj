@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>LuminaGuard</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,10 +16,47 @@
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="NHotkey.Wpf" Version="3.0.0" />
     <PackageReference Include="System.Management" Version="7.0.0" />
+    <!-- Updated System.Text.Json to a safer, newer version. Replace with the actual stable version -->
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Resources/app.ico" />
+    <Compile Include="App.xaml.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="MainWindow.xaml.cs" />
+    <Compile Include="OverlayWindow.xaml.cs" />
+    <Compile Include="Helpers\BrightnessController.cs" />
+    <Compile Include="Helpers\ColorTemperatureConverter.cs" />
+    <Compile Include="Helpers\FilterManager.cs" />
+    <Compile Include="Helpers\ScheduleEntry.cs" />
+    <Compile Include="Helpers\Scheduler.cs" />
+    <Compile Include="Helpers\Logging.cs" />
+    <Compile Include="Helpers\MLAdaptiveEngine.cs" />
+    <Compile Include="Helpers\DayNightCurve.cs" />
+    <Compile Include="Models\UserConfig.cs" />
+    <Compile Include="Models\Profile.cs" />
+    <Compile Include="Models\ProfilesManager.cs" />
+    <Compile Include="Models\CircadianAdvisor.cs" />
+    <Compile Include="Models\SmartLightingController.cs" />
+    <Compile Include="Models\HueAdapter.cs" />
+    <Compile Include="Models\LIFXAdapter.cs" />
+    <Compile Include="Models\SensorManager.cs" />
+    <Compile Include="Models\CloudSyncService.cs" />
+    <Compile Include="Views\TipsAndTricksWindow.xaml.cs" />
+    <Compile Include="Views\OnboardingWizard.xaml.cs" />
+    <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="Plugins\IColorFilterPlugin.cs" />
+    <Compile Include="Plugins\IIntegrationPlugin.cs" />
+    <Compile Include="Helpers\ProcessMonitor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="App.xaml" />
+    <Page Include="MainWindow.xaml" />
+    <Page Include="OverlayWindow.xaml" />
+    <Page Include="Views\TipsAndTricksWindow.xaml" />
+    <Page Include="Views\OnboardingWizard.xaml" />
   </ItemGroup>
 
 </Project>

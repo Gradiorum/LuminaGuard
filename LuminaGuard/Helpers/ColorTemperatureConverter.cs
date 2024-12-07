@@ -1,4 +1,3 @@
-// ColorTemperatureConverter.cs
 using System;
 using System.Windows.Media;
 
@@ -12,7 +11,6 @@ namespace LuminaGuard.Helpers
 
             double red, green, blue;
 
-            // Calculate red
             if (kelvin <= 66)
             {
                 red = 255;
@@ -24,7 +22,6 @@ namespace LuminaGuard.Helpers
                 red = Math.Clamp(red, 0, 255);
             }
 
-            // Calculate green
             if (kelvin <= 66)
             {
                 green = kelvin;
@@ -37,7 +34,6 @@ namespace LuminaGuard.Helpers
             }
             green = Math.Clamp(green, 0, 255);
 
-            // Calculate blue
             if (kelvin >= 66)
             {
                 blue = 255;

@@ -44,3 +44,7 @@ D:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows
 D:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows\LuminaGuard.pdb
 D:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows\LuminaGuard.genruntimeconfig.cache
 D:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows\ref\LuminaGuard.dll
+d:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows\Views\TipsAndTricksWindow.baml
+d:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows\Views\OnboardingWizard.baml
+d:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows\Views\TipsAndTricksWindow.g.cs
+d:\Users\WillR\Documents\GitHub\LuminaGuard\LuminaGuard\obj\Debug\net8.0-windows\Views\OnboardingWizard.g.cs

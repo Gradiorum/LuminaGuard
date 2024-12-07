@@ -1,0 +1,20 @@
+<Window x:Class="LuminaGuard.Views.OnboardingWizard"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Onboarding Wizard" Height="300" Width="400">
+    <Grid Margin="10">
+        <StackPanel>
+            <TextBlock Text="Welcome to LuminaGuard" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+            <TextBlock Text="Set your desired wake and sleep times to optimize your lighting." Margin="0,0,0,10"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <TextBlock Text="Wake Time:" Margin="0,0,10,0"/>
+                <TextBox x:Name="WakeTimeTextBox" Width="60" Text="07:00"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <TextBlock Text="Bed Time:" Margin="0,0,10,0"/>
+                <TextBox x:Name="BedTimeTextBox" Width="60" Text="23:00"/>
+            </StackPanel>
+            <Button Content="Finish" Click="FinishButton_Click" HorizontalAlignment="Right"/>
+        </StackPanel>
+    </Grid>
+</Window>

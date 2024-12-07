@@ -8,6 +8,7 @@
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        WindowState="Maximized">
+        WindowState="Maximized"
+        Visibility="Collapsed">
     <Grid Name="OverlayGrid" Background="Transparent" />
 </Window>

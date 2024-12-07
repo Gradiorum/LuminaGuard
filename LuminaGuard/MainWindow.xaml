@@ -1,64 +1,140 @@
 ﻿<!-- MainWindow.xaml -->
+<!-- 
+  Improvements:
+  - Consider MVVM binding in the future: Instead of handling everything in code-behind, bind these controls to MainViewModel properties.
+  - Use data templates and separate user controls for different sections if expanding the UI.
+-->
+
 <Window x:Class="LuminaGuard.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        Title="LuminaGuard" Height="600" Width="400">
+        Title="LuminaGuard" Height="800" Width="600">
     <Grid Margin="10">
-        <StackPanel>
-            <!-- Branding -->
-            <TextBlock Text="LuminaGuard by Gradiorum" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10" />
-
-            <!-- Enable Filter Toggle -->
-            <CheckBox Name="EnableFilterCheckBox" Content="Enable Filter" Click="EnableFilterCheckBox_Click" />
-
-            <!-- Intensity Slider -->
-            <TextBlock Text="Intensity (%)" Margin="0,10,0,0" />
-            <Slider Name="IntensitySlider" Minimum="0" Maximum="90" Value="50" ValueChanged="IntensitySlider_ValueChanged" />
-
-            <!-- Brightness Slider -->
-            <TextBlock Text="Brightness (%)" Margin="0,10,0,0" />
-            <Slider Name="BrightnessSlider" Minimum="10" Maximum="100" Value="100" ValueChanged="BrightnessSlider_ValueChanged" />
-
-            <!-- Color Temperature Slider -->
-            <TextBlock Text="Color Temperature (K)" Margin="0,10,0,0" />
-            <Slider Name="TemperatureSlider" Minimum="1000" Maximum="6500" Value="1200" TickFrequency="100" IsSnapToTickEnabled="True" ValueChanged="TemperatureSlider_ValueChanged" />
-
-            <!-- Custom Color Input -->
-            <TextBlock Text="Custom Color (Hex)" Margin="0,10,0,0" />
-            <StackPanel Orientation="Horizontal">
-                <TextBox Name="HexCodeTextBox" Width="100" TextChanged="HexCodeTextBox_TextChanged" />
-                <Button Name="ColorPickerButton" Content="Select Color" Click="ColorPickerButton_Click" Margin="10,0,0,0" />
+        <DockPanel>
+            <!-- Sidebar for Profile Switching and Quick Actions -->
+            <StackPanel DockPanel.Dock="Left" Width="150" Margin="5">
+                <TextBlock Text="Profiles" FontWeight="Bold" Margin="0,0,0,5"/>
+                <ComboBox Name="ProfilesComboBox" SelectionChanged="ProfilesComboBox_SelectionChanged"
+                          Margin="0,0,0,10"/>
+                <Button Content="New Profile" Click="NewProfileButton_Click" Margin="0,0,0,5"/>
+                <Button Content="Delete Profile" Click="DeleteProfileButton_Click" Margin="0,0,0,5"/>
+                <Button Content="Open Tips" Click="OpenTipsButton_Click" Margin="0,0,0,5"/>
+                <Button Content="Sync Cloud" Click="CloudSyncButton_Click" Margin="0,0,0,5"/>
             </StackPanel>
 
-            <!-- Advanced Settings Toggle -->
-            <Expander Header="Advanced Settings" Margin="0,10,0,0">
-                <StackPanel>
-                    <!-- Scheduler Section -->
-                    <CheckBox Name="EnableSchedulerCheckBox" Content="Enable Scheduler" />
-                    <Button Name="AddScheduleButton" Content="Add Schedule" Click="AddScheduleButton_Click" Margin="0,5,0,0" />
-                    <ListBox Name="ScheduleListBox" Height="100" />
+            <ScrollViewer HorizontalScrollBarVisibility="Auto">
+            <StackPanel Margin="10" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                <TextBlock Text="LuminaGuard by Gradiorum" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10" />
 
-                    <!-- Brightness Adjustment -->
-                    <CheckBox Name="EnableBrightnessAdjustmentCheckBox" Content="Adjust Brightness Over Time" />
-
-                    <!-- Custom Filters -->
-                    <TextBlock Text="Custom Filters" Margin="0,10,0,0" />
-                    <Button Name="ManageFiltersButton" Content="Manage Filters" Click="ManageFiltersButton_Click" />
+                <!-- Warnings and Override Options -->
+                <StackPanel Margin="0,0,0,10">
+                    <TextBlock Text="For optimal performance, please disable Windows Night Light and f.lux."
+                               FontWeight="Bold" Foreground="Red" Margin="0,0,0,5"
+                               Visibility="{Binding ShowNightLightWarning, Converter={x:Static System:BooleanToVisibilityConverter}}" />
+                    <Button Content="Disable Night Light Instructions" Click="DisableNightLightButton_Click" Margin="0,0,0,5"
+                            Visibility="{Binding ShowNightLightWarning, Converter={x:Static System:BooleanToVisibilityConverter}}"/>
+                    <CheckBox Name="DontShowNightLightWarningCheckBox" Content="Don't show this warning again"
+                              Checked="DontShowNightLightWarningCheckBox_Checked" Margin="0,0,0,5" />
                 </StackPanel>
-            </Expander>
-        </StackPanel>
 
-        <!-- System Tray Icon -->
-        <tb:TaskbarIcon x:Name="NotifyIcon" IconSource="pack://application:,,,/Resources/app.ico" Visibility="Collapsed">
-            <tb:TaskbarIcon.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Toggle Filter" Click="ToggleFilter_Click" />
-                    <MenuItem Header="Open Settings" Click="OpenSettings_Click" />
-                    <MenuItem Header="Exit" Click="Exit_Click" />
-                </ContextMenu>
-            </tb:TaskbarIcon.ContextMenu>
-        </tb:TaskbarIcon>
+                <!-- Enable Filter Toggle -->
+                <CheckBox Name="EnableFilterCheckBox" Content="Enable Filter" Click="EnableFilterCheckBox_Click" />
+
+                <!-- Intensity Slider -->
+                <TextBlock Text="Intensity (%)" Margin="0,10,0,0" />
+                <Slider Name="IntensitySlider" Minimum="0" Maximum="90" Value="50" ValueChanged="IntensitySlider_ValueChanged" />
+
+                <!-- Brightness Slider -->
+                <TextBlock Text="Brightness (%)" Margin="0,10,0,0" />
+                <Slider Name="BrightnessSlider" Minimum="10" Maximum="100" Value="100" ValueChanged="BrightnessSlider_ValueChanged" />
+
+                <!-- Color Temperature Slider -->
+                <TextBlock Text="Color Temperature (K)" Margin="0,10,0,0" />
+                <Slider Name="TemperatureSlider" Minimum="1000" Maximum="6500" Value="1200" TickFrequency="100" IsSnapToTickEnabled="True" ValueChanged="TemperatureSlider_ValueChanged" />
+
+                <!-- Custom Color Input -->
+                <TextBlock Text="Custom Color (Hex)" Margin="0,10,0,0" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Name="HexCodeTextBox" Width="100" TextChanged="HexCodeTextBox_TextChanged" />
+                    <Button Name="ColorPickerButton" Content="Select Color" Click="ColorPickerButton_Click" Margin="10,0,0,0" />
+                </StackPanel>
+
+                <!-- Advanced Settings -->
+                <Expander Header="Advanced Settings" Margin="0,10,0,0">
+                    <StackPanel>
+                        <!-- Scheduler Section -->
+                        <CheckBox Name="EnableSchedulerCheckBox" Content="Enable Scheduler" />
+                        <Button Name="AddScheduleButton" Content="Add Schedule" Click="AddScheduleButton_Click" Margin="0,5,0,0" />
+                        <ListBox Name="ScheduleListBox" Height="100" />
+
+                        <!-- Brightness Adjustment -->
+                        <CheckBox Name="EnableBrightnessAdjustmentCheckBox" Content="Adjust Brightness Over Time" />
+
+                        <!-- Custom Filters -->
+                        <TextBlock Text="Custom Filters" Margin="0,10,0,0" />
+                        <Button Name="ManageFiltersButton" Content="Manage Filters" Click="ManageFiltersButton_Click" />
+
+                        <!-- Smart Home Integration -->
+                        <TextBlock Text="Smart Lighting" Margin="0,10,0,0" />
+                        <CheckBox Name="EnableSmartLightingCheckBox" Content="Sync With Smart Lights" Checked="EnableSmartLightingCheckBox_Checked" Unchecked="EnableSmartLightingCheckBox_Unchecked"/>
+                        <ComboBox Name="SmartLightsComboBox" Margin="0,5,0,0"/>
+
+                        <!-- Machine Learning Adaptation -->
+                        <CheckBox Name="EnableMLCheckBox" Content="Enable Adaptive Learning" Checked="EnableMLCheckBox_Checked" Unchecked="EnableMLCheckBox_Unchecked"/>
+
+                        <!-- Accessibility Modes -->
+                        <TextBlock Text="Accessibility Modes" Margin="0,10,0,0" />
+                        <ComboBox Name="AccessibilityComboBox" Margin="0,5,0,0">
+                            <ComboBoxItem Content="None"/>
+                            <ComboBoxItem Content="High Contrast"/>
+                            <ComboBoxItem Content="Darkroom"/>
+                            <ComboBoxItem Content="Deuteranope Simulation"/>
+                            <ComboBoxItem Content="Protanope Simulation"/>
+                            <ComboBoxItem Content="Tritanope Simulation"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Pause Feature -->
+                <Expander Header="Pause LuminaGuard" Margin="0,10,0,0">
+                    <StackPanel>
+                        <TextBlock Text="You can temporarily pause LuminaGuard:" Margin="0,0,0,10"/>
+                        <RadioButton Name="PauseUntilAppsCloseRadio" Content="Pause while certain apps are running" GroupName="PauseOptions" Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <TextBlock Text="Apps to Monitor (comma-separated):" Margin="0,0,10,0"/>
+                            <TextBox Name="AppsToMonitorTextBox" Width="200" />
+                        </StackPanel>
+                        <RadioButton Name="PauseForDurationRadio" Content="Pause for (hours):" GroupName="PauseOptions" Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Name="PauseDurationTextBox" Width="50" />
+                            <TextBlock Text="hours"/>
+                        </StackPanel>
+                        <RadioButton Name="PauseUntilManuallyEnabledRadio" Content="Pause until I turn it back on" GroupName="PauseOptions" Margin="0,5,0,5"/>
+                        <Button Content="Apply Pause" Click="ApplyPauseButton_Click" Margin="0,5,0,0"/>
+                        <Button Content="Resume Now" Click="ResumeNowButton_Click" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Timeline Visualization -->
+                <TextBlock Text="Daily Curve" Margin="0,20,0,5" FontWeight="Bold"/>
+                <Border BorderBrush="Gray" BorderThickness="1" Height="100">
+                    <TextBlock Text="Timeline visualization placeholder" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- System Tray Icon -->
+                <tb:TaskbarIcon x:Name="NotifyIcon" IconSource="pack://application:,,,/Resources/app.ico" Visibility="Collapsed">
+                    <tb:TaskbarIcon.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Toggle Filter" Click="ToggleFilter_Click" />
+                            <MenuItem Header="Open Settings" Click="OpenSettings_Click" />
+                            <MenuItem Header="Exit" Click="Exit_Click" />
+                        </ContextMenu>
+                    </tb:TaskbarIcon.ContextMenu>
+                </tb:TaskbarIcon>
+            </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
     </Grid>
 </Window>

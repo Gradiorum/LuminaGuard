@@ -1,16 +1,18 @@
-// OverlayWindow.xaml.cs
 using System;
-using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Controls; // For Grid
-using System.Windows.Forms;   // For Screen
+using System.Windows.Controls;
+using System.Windows.Forms; // For Screen
+using System.Windows.Interop;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace LuminaGuard
 {
     public partial class OverlayWindow : Window
     {
+        private List<OverlayWindowInstance> overlayInstances = new List<OverlayWindowInstance>();
+
         public OverlayWindow()
         {
             InitializeComponent();
@@ -19,18 +21,14 @@ namespace LuminaGuard
 
         private void OverlayWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Adjust to all screens
             AdjustToAllScreens();
         }
 
         public void SetOverlayColor(Color color)
         {
-            foreach (Window window in System.Windows.Application.Current.Windows)
+            foreach (var overlay in overlayInstances)
             {
-                if (window is OverlayWindowInstance overlay)
-                {
-                    overlay.OverlayGrid.Background = new SolidColorBrush(color);
-                }
+                overlay.SetOverlayColor(color);
             }
         }
 
@@ -39,15 +37,41 @@ namespace LuminaGuard
             foreach (var screen in Screen.AllScreens)
             {
                 var overlay = new OverlayWindowInstance(screen);
-                overlay.Show();
+                overlay.Hide();
+                overlayInstances.Add(overlay);
             }
             this.Hide(); // Hide the initial overlay
+        }
+
+        public void ShowAllOverlays()
+        {
+            foreach (var overlay in overlayInstances)
+            {
+                overlay.Show();
+            }
+        }
+
+        public void HideAllOverlays()
+        {
+            foreach (var overlay in overlayInstances)
+            {
+                overlay.Hide();
+            }
+        }
+
+        public bool AnyOverlayVisible()
+        {
+            foreach (var o in overlayInstances)
+            {
+                if (o.IsVisible) return true;
+            }
+            return false;
         }
     }
 
     public class OverlayWindowInstance : Window
     {
-        public Grid OverlayGrid { get; set; }
+        private Grid OverlayGrid;
 
         public OverlayWindowInstance(Screen screen)
         {
@@ -67,6 +91,11 @@ namespace LuminaGuard
             Content = OverlayGrid;
 
             Loaded += OverlayWindowInstance_Loaded;
+        }
+
+        public void SetOverlayColor(Color color)
+        {
+            OverlayGrid.Background = new SolidColorBrush(color);
         }
 
         private void OverlayWindowInstance_Loaded(object sender, RoutedEventArgs e)
